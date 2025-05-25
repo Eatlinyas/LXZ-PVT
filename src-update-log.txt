@@ -1,0 +1,181 @@
+更改日志
+最新一次修改：20250523
+修改人：石子睿
+1.修改文件：rinex.cpp		修改函数：decode_obsh
+else if (strstr(label,"GLONASS SLOT / FRQ #")) { /* ver.3.02 */
+    if (nav) {
+        for (i=0,p=buff+4;i<8;i++,p+=8) 
+        {
+            if (sscanf(p,"R%2d %2d",&prn,&fcn)<2) continue;
+            if (1<=prn&&prn<=MAXPRNGLO) nav->glo_fcn[prn-1]=fcn+8;
+        }
+    }
+}
+修改内容：将p+=8改为p+=7，改后为：
+else if (strstr(label,"GLONASS SLOT / FRQ #")) { /* ver.3.02 */
+    if (nav) {
+        for (i=0,p=buff+4;i<8;i++,p+=7) 
+        {
+            if (sscanf(p,"R%2d %2d",&prn,&fcn)<2) continue;
+            if (1<=prn&&prn<=MAXPRNGLO) nav->glo_fcn[prn-1]=fcn+8;
+        }
+    }
+}
+2.修改文件：rinex.cpp		修改函数：decode_obsh
+else if (strstr(label,"GLONASS COD/PHS/BIS" )) 
+{ /* ver.3.02 */
+    if (nav) {
+        for (i=0,p=buff;i<4;i++,p+=13) 
+        {
+            //比较p+1与"C1C"，若两者相等则strncmp返回0，否则返回正负数
+            //是否应该为(!strncmp(p+1,"C1C",3))
+            if      (strncmp(p+1,"C1C",3)) 
+                nav->glo_cpbias[0]=str2num(p,5,8);
+            else if (strncmp(p+1,"C1P",3)) 
+                nav->glo_cpbias[1]=str2num(p,5,8);
+            else if (strncmp(p+1,"C2C",3)) 
+                nav->glo_cpbias[2]=str2num(p,5,8);
+            else if (strncmp(p+1,"C2P",3)) 
+                nav->glo_cpbias[3]=str2num(p,5,8);
+        }
+    }
+}
+修改内容：将所有if（strncmp**）内容改为if（！strncmp**），改后为：
+else if (strstr(label,"GLONASS COD/PHS/BIS" )) 
+{ /* ver.3.02 */
+    if (nav) {
+        for (i=0,p=buff;i<4;i++,p+=13) 
+        {
+            //比较p+1与"C1C"，若两者相等则strncmp返回0，否则返回正负数
+            if      (!strncmp(p+1,"C1C",3)) 
+                nav->glo_cpbias[0]=str2num(p,5,8);
+            else if (!strncmp(p+1,"C1P",3)) 
+                nav->glo_cpbias[1]=str2num(p,5,8);
+            else if (!strncmp(p+1,"C2C",3)) 
+                nav->glo_cpbias[2]=str2num(p,5,8);
+            else if (!strncmp(p+1,"C2P",3)) 
+                nav->glo_cpbias[3]=str2num(p,5,8);
+        }
+    }
+}
+
+3.修改文件：rinex.cpp		修改函数：readrnxnavb
+if (ver >= 4.0 ) 
+{ /* ver.4 */
+	sscanf(buff, ">%s%s%s", recType, id, megType);
+	if(!fgets(buff, MAXRNXLEN, fp))return -1;
+	sp = 4;
+	sat = satid2no(id);
+	if (ver >= 3.0) sys = satid2sys(id);
+}
+else if (ver>=3.0) 
+{ /* ver.3 or GAL/QZS */
+    strncpy(id,buff,3);
+    sat=satid2no(id);
+    sp=4;
+	if (ver >= 3.0) sys = satid2sys(id);
+}
+修改内容：删除所有内部ver判断，改后为：
+if (ver >= 4.0 ) 
+{ /* ver.4 */
+	sscanf(buff, ">%s%s%s", recType, id, megType);
+	if(!fgets(buff, MAXRNXLEN, fp))return -1;
+	sp = 4;
+	sat = satid2no(id);
+	sys = satid2sys(id);
+}
+else if (ver>=3.0) 
+{ /* ver.3 or GAL/QZS */
+    strncpy(id,buff,3);
+    sat=satid2no(id);
+    sp=4;
+	sys = satid2sys(id);
+}
+4.修改文件：options.cpp		修改函数：loadopts
+while (fgets(buff,sizeof(buff),fp)) 
+{
+    n++;
+    chop(buff);
+    
+    if (buff[0]=='\0') continue;
+    
+    if (!(p=strstr(buff,"="))) {
+        fprintf(stderr,"invalid option %s (%s:%d)\n",buff,file,n);
+        continue;
+    }
+    *p++='\0';
+    chop(buff);
+    if (!(opt=searchopt(buff,opts))) continue;
+    
+    if (!str2opt(opt,p)) {
+        fprintf(stderr,"invalid option value %s (%s:%d)\n",buff,file,n);
+        continue;
+    }
+}
+修改内容：添加UTF-8-BOM头判断，改后为：
+while (fgets(buff,sizeof(buff),fp)) 
+{
+	//UTF-8-BOM头判断
+	if (n == 0) 
+	{
+		if ((unsigned char)buff[0] == 0xEF && (unsigned char)buff[1] == 0xBB && (unsigned char)buff[2] == 0xBF)
+		{
+			memmove(buff, buff + 3, strlen(buff) - 2); // -2 因为 '\0' 占1字节
+		}
+	}
+    n++;
+    chop(buff);
+    
+    if (buff[0]=='\0') continue;
+    
+    if (!(p=strstr(buff,"="))) {
+        fprintf(stderr,"invalid option %s (%s:%d)\n",buff,file,n);
+        continue;
+    }
+    *p++='\0';
+    chop(buff);
+    if (!(opt=searchopt(buff,opts))) continue;
+    
+    if (!str2opt(opt,p)) {
+        fprintf(stderr,"invalid option value %s (%s:%d)\n",buff,file,n);
+        continue;
+    }
+}
+
+5.修改文件：postpos.cpp		修改函数：静态变量注释
+static pcvs_t pcvss={0};        /* receiver antenna parameters */
+static pcvs_t pcvsr={0};        /* satellite antenna parameters */
+修改内容：修改注释，改后为：
+static pcvs_t pcvss={0};        /* satellite antenna parameters */
+static pcvs_t pcvsr={0};        /* receiver antenna parameters */
+
+6.修改文件：postpos.cpp		修改函数：postpos
+stat = execses_b(ts, te, ti, popt, sopt, fopt, 1, infile, index, n, outfile, rov, base); 
+修改内容：增加SPP识别语句，修改后：
+if (popt->mode == PMODE_SINGLE)
+    stat = execses(ts, te, ti, popt, sopt, fopt, 1, infile, index, n, outfile);
+else
+    stat = execses_b(ts, te, ti, popt, sopt, fopt, 1, infile, index, n, outfile, rov, base);
+	
+7.修改文件：rinex				修改函数：set_index
+if (sys==SYS_CMP) {
+	if (ind->frq[i] == 2)    ind->frq[i]=1; /* B1I */
+    else if (ind->frq[i]==5) ind->frq[i]=2; /* B2I */
+    else if (ind->frq[i]==4) ind->frq[i]=3; /* B3I */
+	else if (ind->frq[i] == 1) ind->frq[i] = 4; /* B1C */
+	else if (ind->frq[i] == 3) ind->frq[i] = 5; /* B2a */
+	else if (ind->frq[i] == 6) ind->frq[i] = 6; /* B2b */
+}
+修改内容：将if-else格式改为switch-case格式，提高运行效率，修改后：
+if (sys == SYS_CMP) {
+    switch (ind->frq[i]) {
+        case 2:  ind->frq[i] = 1; break; // B1I
+        case 5:  ind->frq[i] = 2; break; // B2I
+        case 4:  ind->frq[i] = 3; break; // B3I
+        case 1:  ind->frq[i] = 4; break; // B1C
+        case 3:  ind->frq[i] = 5; break; // B2a
+        case 6:  ind->frq[i] = 6; break; // B2b
+        default: break; // 未识别的频点保持不变
+    }
+}
+
