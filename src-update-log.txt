@@ -179,3 +179,364 @@ if (sys == SYS_CMP) {
     }
 }
 
+8.修改文件：rinex				修改函数：decode_obsdata
+for (i=0,j=ver<=2.99?0:3;i<ind->n;i++,j+=16) {
+    
+    if (ver<=2.99&&j>=80) { /* ver.2 */
+        if (!fgets(buff,MAXRNXLEN,fp)) break;
+        j=0;
+    }
+    if (stat) {
+        val[i]=str2num(buff,j,14)+ind->shift[i];
+        lli[i]=(unsigned char)str2num(buff,j+14,1)&3;   // 最后的"&3"等价于"%4"（仅对 0～255 范围有效）
+    }
+}
+修改内容：修改lli读取起始位置，使其能够正确读入，修改后：
+for (i=0,j=ver<=2.99?0:3;i<ind->n;i++,j+=16) {
+    
+    if (ver<=2.99&&j>=80) { /* ver.2 */
+        if (!fgets(buff,MAXRNXLEN,fp)) break;
+        j=0;
+    }
+    if (stat) {
+        val[i]=str2num(buff,j,14)+ind->shift[i];
+        lli[i]=(unsigned char)str2num(buff,j+14+1,1)&3;   // 最后的"&3"等价于"%4"（仅对 0～255 范围有效）
+    }
+}
+
+9.修改文件：rtkcmn.cpp		修改函数：static char *obscodes[]
+static char *obscodes[]={       /* observation code strings */
+    
+    ""  ,"1C","1P","1W","1Y", "1M","1N","1S","1L","1E", /*  0- 9 */
+	……………………
+};
+修改内容：修改obscodes类型定义，修改后：
+static const char *obscodes[]={       /* observation code strings */
+    
+    ""  ,"1C","1P","1W","1Y", "1M","1N","1S","1L","1E", /*  0- 9 */
+	……………………
+};
+
+9.修改文件：rnx2rtkp.cpp		修改函数：showmsg
+extern int showmsg(char *format, ...)
+{
+    va_list arg;
+    va_start(arg,format); vfprintf(stderr,format,arg); va_end(arg);
+    fprintf(stderr,"\r");
+    return 0;
+}
+修改内容：修改函数定义，修改后：
+extern int showmsg(const char *format, ...)
+{
+    va_list arg;
+    va_start(arg,format); vfprintf(stderr,format,arg); va_end(arg);
+    fprintf(stderr,"\r");
+    return 0;
+}
+备注：对应rtklib.h中的声明也要修改
+
+9.修改文件：rinex.cpp		修改函数：set_index
+char *optstr="";
+修改内容：修改类型定义，修改后：
+const char* optstr = "";
+
+10.修改文件：rinex.cpp		修改函数：outrnxobsh
+char* sys, * tsys = "GPS";
+修改内容：修改类型定义，修改后：
+const char* sys, * tsys = "GPS";
+
+11.修改文件：rinex.cpp		修改函数：outrnxnavh
+char date[64],*sys;
+修改内容：修改类型定义，修改后：
+char date[64];
+const char* sys;
+
+12.修改文件：rinex.cpp		修改函数：outrnxnavb
+char code[32],*sep;
+修改内容：修改类型定义，修改后：
+char code[32];
+const char* sep;
+
+13.修改文件：rinex.cpp		修改函数：outrnxhnavb
+char code[32],*sep;
+修改内容：修改类型定义，修改后：
+char code[32];
+const char* sep;
+
+--------------------↓↓↓↓↓↓↓提示：以下改动在最新版本中已撤销↓↓↓↓↓↓↓-------------------
+14.修改文件：rnx2rtkp.cpp		修改函数：main
+char *infile[MAXFILE],*outfile="",*p;
+修改内容：修改类型定义，修改后：
+const char *infile[MAXFILE],*outfile="",*p;
+--------------------↑↑↑↑↑↑↑提示：以上改动在最新版本中已撤销↑↑↑↑↑↑↑-------------------
+infile与outfile最新定义方式见33
+
+15.修改文件：pntpos.cpp			修改函数：selion
+static int selion(char *modelname, gtime_t time, bds_ion_t bds_ion)
+修改内容：修改类型定义，修改后：
+static int selion(const char *modelname, gtime_t time, bds_ion_t bds_ion)
+
+16.修改文件：rtkcmn.cpp			修改函数：isepoch
+extern int isepoch(gtime_t t, char *timestr)
+修改内容：修改类型定义，修改后：
+extern int isepoch(gtime_t t, const char *timestr)
+备注：对应rtklib.h中的声明也要修改
+
+17.修改文件：rinex.cpp		修改函数：outrnxgnavb
+char code[32],*sep;
+修改内容：修改类型定义，修改后：
+char code[32];
+const char* sep;
+
+--------------------↓↓↓↓↓↓↓提示：以下改动在最新版本中已撤销↓↓↓↓↓↓↓-------------------
+18.修改文件：test_src.cpp		修改函数：loadfiles
+×××××××××××××extern int loadfiles(const char* file, opt_t* opts, char* infile[], char* outfile)
+×××××××××××××修改内容：修改类型定义，修改后：
+×××××××××××××extern int loadfiles(const char* file, opt_t* opts, const char* infile[], const char* outfile)
+×××××××××××××备注：对应rtklib.h中的声明也要修改
+--------------------↑↑↑↑↑↑↑提示：以上改动在最新版本中已撤销↑↑↑↑↑↑↑-------------------
+
+19.修改文件：postpos.cpp		修改函数：postpos
+extern int postpos(gtime_t ts, gtime_t te, double ti, double tu,
+    const prcopt_t* popt, const solopt_t* sopt,
+    const filopt_t* fopt, char** infile, int n, char* outfile,
+    const char* rov, const char* base)
+	……………………
+	char* ifile[MAXINFILE], ofile[1024],* ext;
+修改内容：修改类型定义，修改后：
+extern int postpos(gtime_t ts, gtime_t te, double ti, double tu,
+    const prcopt_t* popt, const solopt_t* sopt,
+    const filopt_t* fopt, const char** infile, int n, const char* outfile,
+    const char* rov, const char* base)
+	……………………
+	char* ifile[MAXINFILE], ofile[1024];
+	const char* ext;
+备注：对应rtklib.h中的声明也要修改
+
+20.修改文件：solution.cpp		修改函数：outnmea_rmc
+char *p=(char *)buff,*q,sum,*emag="E";
+修改内容：修改emag类型定义，修改后：
+char *p=(char *)buff,*q,sum;
+const char *emag="E";
+
+21.修改文件：postpos.cpp		修改函数：execses，execses_r，execses_b
+static int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
+                   const solopt_t *sopt, const filopt_t *fopt, int flag,
+                   char **infile, const int *index, int n, char *outfile)
+static int execses_r(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
+                     const solopt_t *sopt, const filopt_t *fopt, int flag,
+                     char **infile, const int *index, int n, char *outfile,
+                     const char *rov)
+static int execses_b(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
+                     const solopt_t *sopt, const filopt_t *fopt, int flag,
+                     char **infile, const int *index, int n, char *outfile,
+                     const char *rov, const char *base)
+修改内容：修改类型定义，修改后：
+static int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
+                   const solopt_t *sopt, const filopt_t *fopt, int flag,
+                   const char **infile, const int *index, int n, const char *outfile)
+static int execses_r(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
+                     const solopt_t *sopt, const filopt_t *fopt, int flag,
+                     const char **infile, const int *index, int n, const char *outfile,
+                     const char *rov)
+static int execses_b(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
+                     const solopt_t *sopt, const filopt_t *fopt, int flag,
+                     const char **infile, const int *index, int n, const char *outfile,
+                     const char *rov, const char *base)
+					 
+22.修改文件：rtcm3.cpp		修改函数：save_msm_obs
+char *msm_type="",*q=NULL;
+修改内容：修改类型定义，修改后：	
+const char *msm_type="";
+char *q=NULL;;
+
+23.修改文件：rtkcmn.cpp		修改函数：code2obs
+extern char *code2obs(unsigned char code, int *freq)
+修改内容：修改类型定义，修改后：
+extern const char *code2obs(unsigned char code, int *freq)
+备注：对应rtklib.h中的声明也要修改
+
+24.修改文件：rtkcmn.cpp		修改函数：rtk_uncompress
+char *p,cmd[2048]="",tmpfile[1024]="",buff[1024],*fname,*dir="";
+修改内容：修改类型定义，修改后：
+char* p, cmd[2048] = "", tmpfile[1024] = "", buff[1024], * fname;
+const char* dir = "";
+
+25.修改文件：rtkpos.cpp		修改函数：valpos
+char *stype;
+修改内容：修改类型定义，修改后：
+const char *stype;
+
+26.修改文件：rinex.cpp		修改函数：obsindex
+char *id;
+修改内容：修改类型定义，修改后：
+const char *id;
+
+27.修改文件：rtkcmn.cpp		修改函数：getcodepri
+const char* p, * optstr;
+char * obs，str[8] = "";
+修改内容：修改类型定义，修改后：
+const char* p, * optstr, * obs;
+char str[8] = "";
+
+28.修改文件：rtcm3e.cpp		修改函数：to_sigid
+char *sig;
+修改内容：修改类型定义，修改后：
+const char *sig;
+
+29.修改文件：postpos.cpp		修改函数：readobsnav
+static int readobsnav(gtime_t ts, gtime_t te, double ti, char **infile,
+                      const int *index, int n, const prcopt_t *prcopt,
+                      obs_t *obs, nav_t *nav, sta_t *sta)
+修改内容：修改类型定义，修改后：					  
+static int readobsnav(gtime_t ts, gtime_t te, double ti, const char **infile,
+                      const int *index, int n, const prcopt_t *prcopt,
+                      obs_t *obs, nav_t *nav, sta_t *sta)
+					  
+30.修改文件：postpos.cpp		修改函数：outhead
+static int outhead(const char *outfile, char **infile, int n,
+                   const prcopt_t *popt, const solopt_t *sopt)
+修改内容：修改类型定义，修改后：					  
+static int outhead(const char *outfile, const char **infile, int n,
+                   const prcopt_t *popt, const solopt_t *sopt)				  
+
+31.修改文件：postpos.cpp		修改函数：outheader
+static void outheader(FILE *fp, char **file, int n, const prcopt_t *popt,
+                      const solopt_t *sopt)
+修改内容：修改类型定义，修改后：					  
+static void outheader(FILE *fp, const char **file, int n, const prcopt_t *popt,
+                      const solopt_t *sopt)	
+					  
+32.修改文件：postpos.cpp		修改函数：execses，execses_r，execses_b
+添加：
+const char* local_ifile[MAXINFILE], * local_ofile;
+………………
+for (int i = 0; i < MAXINFILE; i++)local_ifile[i] = ifile[i];
+local_ofile = ofile;		
+避免类型不兼容。
+
+33.修改文件：rnx2rtkp			修改函数：main
+修改内容：infile，outfile逻辑改为：
+char* infile[MAXFILE] = { "" }, * p;
+char outfile[1024];
+……………………
+if (n <= 0)
+{
+	for (i = 0; i<MAXFILE; i++)infile[i] = ifs[i];
+    n = loadfiles(cfgfile, sysopts, infile, outfile);     //n为输入文件数目
+    for (int i = n; i < MAXFILE; i++)infile[i] = ""; //清空剩余的输入文件
+}
+…………………………
+const char* real_outfile = outfile;
+const char* real_infile[MAXFILE];
+for(int i=0;i<MAXFILE;i++)
+{
+	if (infile[i][0] == '\0') real_infile[i] = NULL; //如果输入文件为空，则设置为NULL
+	else real_infile[i] = infile[i]; //否则设置为实际的输入文件路径
+}
+
+ret=postpos(ts,te,tint,0.0,&prcopt,&solopt,&filopt, real_infile,n, real_outfile,"","");
+
+34.修改文件：rtkcmn			修改函数：expath
+if ((p = strrchr(path, '/')) || (p = strrchr(path, '\\'))) {
+    file = p + 1; strncpy(dir, path, p - path + 1); dir[p - path + 1] = '\0';
+}
+修改内容：修改函数定义，修改后：
+if ((p = (char*)strrchr(path, '/')) || (p = (char*)strrchr(path, '\\'))) {
+    file = p + 1; strncpy(dir, path, p - path + 1); dir[p - path + 1] = '\0';
+}
+
+35.修改文件：bdssh.h/bdssh.cpp	修改函数：BDSSH
+将Class换为结构体定义。
+
+36.修改文件：mainDABSCAN.cpp
+修改内容：删除该文件（移入src/rcv文件夹下）
+
+37.修改文件：ionmodel_nequick.c	修改函数：ionmodel_nequick
+if (!GetModuleFileName(NULL, BufferFileName, MAX_PATH))
+{
+    return 0.0;
+}
+修改内容：GetModuleFileName在linux下不适配，换为readlink，修改后：
+#ifdef _WIN32
+      if (!GetModuleFileName(NULL, BufferFileName, MAX_PATH))
+      {
+          return 0.0;
+      }
+#else
+  // Linux 替代方案，例如：
+      char path[MAX_PATH];
+      ssize_t len = readlink("/proc/self/exe", BufferFileName, sizeof(path) - 1);
+      if (len = -1)
+      {
+          return 0.0;
+      }
+      else
+      {
+          BufferFileName[len] = '\0'; // 确保字符串以 null 结尾
+	  
+      }
+#endif
+
+38.修改文件：NeQuickG_JRC_iono_F2_layer_fourier_coefficients	修改函数：static int32_t coefficients_file_get_id
+if (_snprintf(file_id, file_id_size, "%2d", month)
+修改内容：_snprintf换为snprintf	修改后：
+if (snprintf(file_id, file_id_size, "%2d", month) < 0) 
+
+39.修改文件：若干，				修改函数：若干
+修改内容：取消
+solar_activity_get_effective_ionisation_level_in_sfu、
+F2_layer_fourier_coefficients_interpolate、
+iono_profile_get_peak_amplitudes
+三个函数在相应头文件中声明的前置条件“ifdef FTR_UNIT_TEST”
+
+40.修改文件：postpos.cpp			修改函数：readobsnav
+修改内容：删除所有初始化内容，改用函数来初始化，修改后：
+static int readobsnav(gtime_t ts, gtime_t te, double ti, const char **infile,
+                      const int *index, int n, const prcopt_t *prcopt,
+                      obs_t *obs, nav_t *nav, sta_t *sta)
+{
+    int i,j,ind=0,nobs=0,rcv=1;
+    
+    trace(3,"readobsnav: ts=%s n=%d\n",time_str(ts,0),n);
+    // 初始化
+    init_nav(&navs);
+    init_obs(&obss);
+    nav->galfreq = prcopt->freqopt;
+    nepoch=0;
+	……
+}
+同时，在该文件最上面增加函数：
+/* 初始化重要的结构体 */
+void init_nav(nav_t* nav) 
+{
+    memset(nav, 0, sizeof(nav_t)); // 清空所有内容
+
+    // 初始化 ion_bdsk9 成员
+    nav->ion_bdsk9 = (BDSSH*)malloc(sizeof(BDSSH));
+    if (!nav->ion_bdsk9) {
+        fprintf(stderr, "内存分配失败（ion_bdsk9）\n");
+        exit(EXIT_FAILURE);
+    }
+    // 你可以在这里继续初始化 nav 其他指针成员（如 eph, geph 等）根据需要
+    nav->eph = NULL; nav->n = nav->nmax = 0;
+    nav->geph = NULL; nav->ng = nav->ngmax = 0;
+    nav->seph = NULL; nav->ns = nav->nsmax = 0;
+    nav->galcode = 1;  /* ? 1:I/Nav, 2:FNav */
+    nav->obstsys = TSYS_GPS;
+    //nav->ion_bdsk9 = new BDSSH(); BDSSH改写为结构体格式
+    nav->ion_bdsk9->BrdIonCoefNum = 0;// the parameter number for broadcast [9 in default] 
+    nav->ion_bdsk9->bds_ion.nk8 = 0;
+    nav->ion_bdsk9->bds_ion.nk14 = 0;
+    nav->ion_bdsk9->bds_ion.nsh9 = 0;// the total parameter number for SH resolution [26 in default]
+    nav->igmasta = -1;
+}
+void init_obs(obs_t* obs)
+{
+    memset(obs, 0, sizeof(obs_t)); // 清空所有内容
+    obs->data = NULL; obs->n = obs->nmax = 0;
+    // 初始化成员
+    
+
+    // 你可以在这里继续初始化 data 其他指针成员,根据需要
+}

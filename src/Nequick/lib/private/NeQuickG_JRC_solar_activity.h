@@ -106,7 +106,7 @@ extern bool solar_activity_is_effective_ionisation_level_equal(
 #define NeQuickG_Az_solar_activity_get_sun_spot_effective_count(Az_in_sfu) \
     get_solar_mean_spot_number(Az_in_sfu)
 
-#ifdef FTR_UNIT_TEST
+//#ifdef FTR_UNIT_TEST
 /** Unit test for Effective Ionisation Level (Az)
  * @param[in] pAi ionospheric coefficients (a<SUB>0</SUB>, a<SUB>1</SUB>, a<SUB>2</SUB>)
  * @param[in] modip_in_degrees MODIP in degrees
@@ -115,6 +115,6 @@ extern double_t
 solar_activity_get_effective_ionisation_level_in_sfu
   (const AZ_coefficients_t* const pAi,
    double_t modip_in_degrees);
-#endif // FTR_UNIT_TEST
+//#endif // FTR_UNIT_TEST
 
 #endif // NEQUICK_G_JRC_SOLAR_ACTIVITY_H

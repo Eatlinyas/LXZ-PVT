@@ -1,25 +1,20 @@
 ﻿
 //#include "bdssh.h"
-#include "rtklib.h"
-
 #include "bdgim.h"
 #include "common.h"
+#include "rtklib.h"
+
+//BDSSH::BDSSH(void)	BDSSH初始化放在readobsnav函数中
+//{
+//	int i;
+//	this->BrdIonCoefNum = 0;// the parameter number for broadcast [9 in default] 
+//	this->bds_ion.nk8 = 0;
+//	this->bds_ion.nk14 = 0;
+//	this->bds_ion.nsh9 = 0;// the total parameter number for SH resolution [26 in default] 
+//	memset(this->BrdIonCoef, 0, BRDCOUNT*MAXGROUP*sizeof(double));			        // the body array for storing the BDSSH broadcast parameter														// the begin epoch of the compute epoch [in MJD]
+//}
 
 
-BDSSH::BDSSH(void)
-{
-	int i;
-	this->BrdIonCoefNum = 0;															// the parameter number for broadcast [9 in default] 
-	this->bds_ion.nk8 = 0;
-	this->bds_ion.nk14 = 0;
-	this->bds_ion.nsh9 = 0;// the total parameter number for SH resolution [26 in default] 
-	memset(this->BrdIonCoef, 0, BRDCOUNT*MAXGROUP*sizeof(double));			        // the body array for storing the BDSSH broadcast parameter														// the begin epoch of the compute epoch [in MJD]
-}
-
-BDSSH::~BDSSH(void)
-{
-
-}
 
 
 void sort(double *data, int n){
@@ -71,7 +66,7 @@ int  selemajority(double *tmp, int n){
 	return -1;
 }
 
-bool BDSSH::uniqion(double *ep)
+char uniqion(double* ep, BDSSH* bdssh)
 {
 	int i, j, k;
 	int sys, nigmas = 0;
@@ -83,43 +78,44 @@ bool BDSSH::uniqion(double *ep)
 
 	trace(3, "uniqion:\n");
 
-	if (bds_ion.nsh9 <= 0)return -1;
+	if (bdssh->bds_ion.nsh9 <= 0)return -1;
+	//if (bds_ion.nsh9 <= 0)return -1;
 
-	this->BrdIonCoefNum = 9;
-	for (i = 0; i < bds_ion.nsh9; i++){
-		if (bds_ion.bdssh9[i].hour != -1)nigmas++;
+	bdssh->BrdIonCoefNum = 9;
+	for (i = 0; i < bdssh->bds_ion.nsh9; i++) {
+		if (bdssh->bds_ion.bdssh9[i].hour != -1)nigmas++;
 	}
 	if (nigmas == 0)
 	{ /* not igmas format, keeps only the first one */
-		this->BrdIonCoefGroup = 1;
-		for (j = 0; j < this->BrdIonCoefNum; j++){
-			this->BrdIonCoef[j][0] = bds_ion.bdssh9[0].ion[j];
+		bdssh->BrdIonCoefGroup = 1;
+		for (j = 0; j < bdssh->BrdIonCoefNum; j++) {
+			bdssh->BrdIonCoef[j][0] = bdssh->bds_ion.bdssh9[0].ion[j];
 		}
 	}
-	else{
-		this->BrdIonCoefGroup = 24;
-		for (i = 0; i < 24; i++){
+	else {
+		bdssh->BrdIonCoefGroup = 24;
+		for (i = 0; i < 24; i++) {
 			n = 0;
-			for (j = 0; j < bds_ion.nsh9; j++){
-				if (bds_ion.bdssh9[j].hour != i)continue;
-				tmp[n] = norm(bds_ion.bdssh9[j].ion, this->BrdIonCoefNum);
+			for (j = 0; j < bdssh->bds_ion.nsh9; j++) {
+				if (bdssh->bds_ion.bdssh9[j].hour != i)continue;
+				tmp[n] = norm(bdssh->bds_ion.bdssh9[j].ion, bdssh->BrdIonCoefNum);
 				if (tmp[n] == 0.0)continue;
 				n++;
 			}
 			ii = selemajority(tmp, n);
-			if (ii < 0){
-				for (j = 0; j < this->BrdIonCoefNum; j++){
-					this->BrdIonCoef[j][i] = 0.0;
+			if (ii < 0) {
+				for (j = 0; j < bdssh->BrdIonCoefNum; j++) {
+					bdssh->BrdIonCoef[j][i] = 0.0;
 				}
 			}
 			else
 			{
 				idx = -1;
-				for (j = 0; j < bds_ion.nsh9; j++){
-					if (bds_ion.bdssh9[j].hour != i)continue;
-					if (tmp[ii] == norm(bds_ion.bdssh9[j].ion, 9)) {
-						for (k = 0; k < this->BrdIonCoefNum; k++){
-							this->BrdIonCoef[k][i] = bds_ion.bdssh9[j].ion[k];
+				for (j = 0; j < bdssh->bds_ion.nsh9; j++) {
+					if (bdssh->bds_ion.bdssh9[j].hour != i)continue;
+					if (tmp[ii] == norm(bdssh->bds_ion.bdssh9[j].ion, 9)) {
+						for (k = 0; k < bdssh->BrdIonCoefNum; k++) {
+							bdssh->BrdIonCoef[k][i] = bdssh->bds_ion.bdssh9[j].ion[k];
 						}
 						break;
 					}

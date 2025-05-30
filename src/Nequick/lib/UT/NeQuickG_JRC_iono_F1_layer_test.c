@@ -10,7 +10,7 @@
  * @file
  */
 #include "NeQuickG_JRC_iono_F1_layer_test.h"
-
+#include <stddef.h>  // °üº¬ size_t ¶¨Òå
 #include "NeQuickG_JRC_iono_F1_layer.h"
 #include "NeQuickG_JRC_macros.h"
 

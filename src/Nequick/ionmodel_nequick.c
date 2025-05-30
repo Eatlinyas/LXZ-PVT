@@ -13,14 +13,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 #include "NeQuickG_JRC.h"
 #include "NeQuickG_JRC_exception.h"
 #include "NeQuickG_JRC_input_data_std_stream.h"
 #include "NeQuickG_JRC_input_data_stream.h"
 #include "NeQuickG_JRC_macros.h"
 #include<string.h>
-#include<windows.h>
 
 #define NEQUICK_TEC_EXCEPTION -8
 #ifdef FTR_UNIT_TEST
@@ -289,17 +292,39 @@ extern double ionmodel_nequick(double * galionpar,int month, double UTC, double 
   volatile int ret = NEQUICK_OK;
 
   volatile NeQuickG_handle nequick = NEQUICKG_INVALID_HANDLE;
-  static first = 1;
+  static int first = 1;
   static NeQuickG_handle nequick_;
 
 
   if (first) {
 	  char BufferFileName[MAX_PATH];//MAX_PATH是系统的宏定义
 	  memset(BufferFileName, 0, MAX_PATH);
-	  if (!GetModuleFileName(NULL, BufferFileName, MAX_PATH))
+	  /*if (!GetModuleFileName(NULL, BufferFileName, MAX_PATH))
 	  {
 		  return 0.0;
-	  }
+	  }*/
+
+      // 替换 GetModuleFileName
+#ifdef _WIN32
+      if (!GetModuleFileName(NULL, BufferFileName, MAX_PATH))
+      {
+          return 0.0;
+      }
+#else
+  // Linux 替代方案，例如：
+      char path[MAX_PATH];
+      ssize_t len = readlink("/proc/self/exe", BufferFileName, sizeof(path) - 1);
+      if (len = -1)
+      {
+          return 0.0;
+      }
+      else
+      {
+          BufferFileName[len] = '\0'; // 确保字符串以 null 结尾
+	  
+      }
+#endif
+
 	  (strrchr(BufferFileName, '\\'))[1] = 0;
 
 	  char pModip_file[1024];

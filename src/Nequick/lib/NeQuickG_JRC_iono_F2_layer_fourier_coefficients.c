@@ -54,7 +54,7 @@ static int32_t coefficients_file_get_id(
   // e.g. ccir21.asc for November
   month = (uint8_t)(month + 10);
  
-  if (_snprintf(file_id, file_id_size, "%2d", month) < 0) {
+  if (snprintf(file_id, file_id_size, "%2d", month) < 0) {
     NEQUICK_ERROR_RETURN(
       NEQUICK_ERROR_SRC_F2_LAYER,
       NEQUICK_ERROR_CODE_BAD_CCIR_FILE,
@@ -360,7 +360,7 @@ static int32_t interpolate_Fm3(
 }
 
 #ifndef FTR_UNIT_TEST
-static
+//static
 #endif
 int32_t F2_layer_fourier_coefficients_interpolate(
   F2_layer_fourier_coeff_context_t* const pContext,

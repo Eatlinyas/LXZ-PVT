@@ -27,8 +27,6 @@
 #define MAXPERIODCOUNT  20
 #endif
 
-
-
 typedef struct {        /* GPS/QZS/GAL broadcast ephemeris type */
 	int sat;            /* satellite number */
 	int iodi;     /* IODI,reserved */
@@ -56,22 +54,30 @@ typedef struct {        /* navigation data type */
 	bdssh9_t bdssh9[1024];
 }bds_ion_t;
 
-class BDSSH
+//class BDSSH	
+//{
+// 已改写为结构体
+//public:
+//	int BrdIonCoefNum;
+//	BDSSH(void);
+//	~BDSSH(void);
+//
+//	bool uniqion(double* epoch);
+//
+//	int GetBrdCoefNum() { return BrdIonCoefNum; }
+//	double BrdIonCoef[BRDCOUNT][24];			// the body array for storing the bdssh broadcast parameter
+//	bds_ion_t bds_ion;
+//	int BrdIonCoefGroup;
+//private:
+//};
+
+typedef struct
 {
-public:
+	int i;
 	int BrdIonCoefNum;
-	BDSSH(void);
-	~BDSSH(void);
-
-	bool uniqion(double *epoch);
-
-	int GetBrdCoefNum(){ return BrdIonCoefNum; }
 	double BrdIonCoef[BRDCOUNT][24];			// the body array for storing the bdssh broadcast parameter
 	bds_ion_t bds_ion;
 	int BrdIonCoefGroup;
-private:
-
-
-};
-
+}BDSSH;
+char uniqion(double* ep, BDSSH* bdssh);
 #endif

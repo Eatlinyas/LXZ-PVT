@@ -44,6 +44,12 @@
  * @return none
  */
 #define LOG_ERROR(_text) (perror( _text))
+#else
+ /*
+  * 如果没有定义 FTR_UNIT_TEST，
+  * 则 LOG_ERROR 接受一个参数，但不做任何事情
+  */
+#define LOG_ERROR(...) ((void)0)
 #endif
 
 /** Threshold based comparison of doubles.

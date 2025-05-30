@@ -42,9 +42,13 @@
 #include <winsock2.h>
 #include <windows.h>
 #else
+#ifndef MAX_PATH
+#define MAX_PATH 260
+#endif
 #include <pthread.h>
 #endif
 #include "bdssh.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -752,7 +756,7 @@ typedef struct {        /* SBAS long term satellite error correction type */
     int iode;           /* IODE (issue of date ephemeris) */
     double dpos[3];     /* delta position (m) (ecef) */
     double dvel[3];     /* delta velocity (m/s) (ecef) */
-    double daf0,daf1;   /* delta clock-offset/drift (s,s/s) */
+    double daf0, daf1;   /* delta clock-offset/drift (s,s/s) */
 } sbslcorr_t;
 
 typedef struct {        /* SBAS satellite correction type */
@@ -1459,7 +1463,7 @@ EXPORT int  satsys  (int sat, int *prn);
 EXPORT int  satid2no(const char *id);
 EXPORT void satno2id(int sat, char *id);
 EXPORT unsigned char obs2code(const char *obs, int *freq);
-EXPORT char *code2obs(unsigned char code, int *freq);
+EXPORT const char *code2obs(unsigned char code, int *freq);
 EXPORT int  satexclude(int sat, double var, int svh, const prcopt_t *opt);
 EXPORT int  testsnr(int base, int freq, double el, double snr,
                     const snrmask_t *mask);
@@ -1890,9 +1894,9 @@ EXPORT int pppcorr_stec(const pppcorr_t *corr, gtime_t time, const double *pos,
 
 /* post-processing positioning -----------------------------------------------*/
 EXPORT int postpos(gtime_t ts, gtime_t te, double ti, double tu,
-                   const prcopt_t *popt, const solopt_t *sopt,
-                   const filopt_t *fopt, char **infile, int n, char *outfile,
-                   const char *rov, const char *base);
+    const prcopt_t* popt, const solopt_t* sopt,
+    const filopt_t* fopt, const char** infile, int n, const char* outfile,
+    const char* rov, const char* base);
 
 /* stream server functions ---------------------------------------------------*/
 EXPORT void strsvrinit (strsvr_t *svr, int nout);
@@ -1965,7 +1969,7 @@ extern double gettgd(int sat, const nav_t *nav, int f, int *galcode);
 extern int redesign_freq(int nfreq);
 extern int test_freq(int freq0, int  ifreq);
 //extern void frqidx(prcopt_t opt, int *f_idx);
-extern  int test_sys(int sys, int m);
+extern int test_sys(int sys, int m);
 extern int frqidx(prcopt_t opt, int *f_idx);
 extern int guess_frqidx(int sat, prcopt_t opt, int *f_idx);
 
@@ -1976,12 +1980,12 @@ extern double permutation(int flag, const double *x0, const int nx0, const doubl
 extern void outsatres(rtk_t* rtk, int* sat, int ns);
 extern void outsatres_single(FILE *fpSat_p, rtk_t* rtk, obsd_t *obs, int n);
 extern void outsatsnr_single(FILE *fpSat_snr, rtk_t* rtk, obsd_t *obs, int n);
-extern int loadfiles(const char *file, opt_t *opts, char *infile[], char *outfile);
-extern int isepoch(gtime_t t, char *timestr);
+extern int loadfiles(const char* file, opt_t* opts, char* infile[], char* outfile);
+extern int isepoch(gtime_t t, const char *timestr);
 extern int satid2sys(const char *id);
 
 /* application defined functions ---------------------------------------------*/
-extern int showmsg(char *format,...);
+extern int showmsg(const char *format,...);
 extern void settspan(gtime_t ts, gtime_t te);
 extern void settime(gtime_t time);
 extern void getexedir(char *dir);

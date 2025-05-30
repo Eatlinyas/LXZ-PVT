@@ -360,11 +360,11 @@ static void chop(char *str)
 *                              (terminated with table[i].name="")
 * return : status (1:ok,0:error)
 *-----------------------------------------------------------------------------*/
-extern int loadfiles(const char *file, opt_t *opts, char *infile[], char *outfile)
+extern int loadfiles(const char* file, opt_t* opts, char* infile[], char* outfile)
 {
-	FILE *fp;
-	opt_t *opt;
-	char buff[2048], *p;
+	FILE* fp;
+	opt_t* opt;
+	char buff[2048], * p;
 	int n = 0, ni = 0;
 
 	trace(3, "loadopts: file=%s\n", file);
@@ -385,14 +385,14 @@ extern int loadfiles(const char *file, opt_t *opts, char *infile[], char *outfil
 		*p++ = '\0';		//将“=”后面的内容清空
 		chop(buff);
 
-		if (!strcmp(buff, "-infile")){
+		if (!strcmp(buff, "-infile")) {
 			if (strlen(p) > 0)
 			{
 				strcpy(infile[ni++], p);
 				continue;
 			}
 		}
-		if (!strcmp(buff, "-outfile")){
+		if (!strcmp(buff, "-outfile")) {
 			strcpy(outfile, p);
 			continue;
 		}

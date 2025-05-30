@@ -164,7 +164,7 @@ static double prange(const obsd_t *obs, const nav_t *nav, const double *azel,
 	return PC;
 }
 
-static int selion(char *modelname, gtime_t time, bds_ion_t bds_ion)
+static int selion(const char *modelname, gtime_t time, bds_ion_t bds_ion)
 {/* selecte specified ion according experience */
 	/* GEO first; IGSO second; MEO last */
 	int i, j = -1, iGEO = -1, iIGSO = -1, iMEO = -1;

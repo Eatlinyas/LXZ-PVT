@@ -79,6 +79,39 @@ static rtcm_t rtcm;             /* rtcm control struct */
 static FILE *fp_rtcm=NULL;      /* rtcm data file pointer */
 static char outsppfile[1024];
 
+/* 初始化重要的结构体 */
+void init_nav(nav_t* nav) 
+{
+    memset(nav, 0, sizeof(nav_t)); // 清空所有内容
+
+    // 初始化 ion_bdsk9 成员
+    nav->ion_bdsk9 = (BDSSH*)malloc(sizeof(BDSSH));
+    if (!nav->ion_bdsk9) {
+        fprintf(stderr, "内存分配失败（ion_bdsk9）\n");
+        exit(EXIT_FAILURE);
+    }
+    // 你可以在这里继续初始化 nav 其他指针成员（如 eph, geph 等）根据需要
+    nav->eph = NULL; nav->n = nav->nmax = 0;
+    nav->geph = NULL; nav->ng = nav->ngmax = 0;
+    nav->seph = NULL; nav->ns = nav->nsmax = 0;
+    nav->galcode = 1;  /* ? 1:I/Nav, 2:FNav */
+    nav->obstsys = TSYS_GPS;
+    //nav->ion_bdsk9 = new BDSSH(); BDSSH改写为结构体格式
+    nav->ion_bdsk9->BrdIonCoefNum = 0;// the parameter number for broadcast [9 in default] 
+    nav->ion_bdsk9->bds_ion.nk8 = 0;
+    nav->ion_bdsk9->bds_ion.nk14 = 0;
+    nav->ion_bdsk9->bds_ion.nsh9 = 0;// the total parameter number for SH resolution [26 in default]
+    nav->igmasta = -1;
+}
+void init_obs(obs_t* obs)
+{
+    memset(obs, 0, sizeof(obs_t)); // 清空所有内容
+    obs->data = NULL; obs->n = obs->nmax = 0;
+    // 初始化成员
+    
+
+    // 你可以在这里继续初始化 data 其他指针成员,根据需要
+}
 /* show message and check break ----------------------------------------------*/
 /* 输出内容，如果基准站或流动站有信息，顺便输出一下 */
 static int checkbrk(const char *format, ...)
@@ -124,7 +157,7 @@ static void outrpos(FILE *fp, const double *r, const solopt_t *opt)
     }
 }
 /* output header -------------------------------------------------------------*/
-static void outheader(FILE *fp, char **file, int n, const prcopt_t *popt,
+static void outheader(FILE *fp, const char **file, int n, const prcopt_t *popt,
                       const solopt_t *sopt)
 {
     const char *s1[]={"GPST","UTC","JST"};
@@ -378,8 +411,7 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt,
 
     trace(3,"procpos : mode=%d\n",mode);
     
-    solstatic=sopt->solstatic&&
-              (popt->mode==PMODE_STATIC||popt->mode==PMODE_PPP_STATIC);
+    solstatic=((sopt->solstatic)&&(popt->mode==PMODE_STATIC||popt->mode==PMODE_PPP_STATIC));
     
     rtkinit(&rtk,popt);
     rtcm_path[0]='\0';
@@ -765,23 +797,17 @@ static void freepreceph(nav_t *nav, sbs_t *sbs, lex_t *lex)
     free_rtcm(&rtcm);
 }
 /* read obs and nav data -----------------------------------------------------*/
-static int readobsnav(gtime_t ts, gtime_t te, double ti, char **infile,
+static int readobsnav(gtime_t ts, gtime_t te, double ti, const char **infile,
                       const int *index, int n, const prcopt_t *prcopt,
                       obs_t *obs, nav_t *nav, sta_t *sta)
 {
     int i,j,ind=0,nobs=0,rcv=1;
     
     trace(3,"readobsnav: ts=%s n=%d\n",time_str(ts,0),n);
-    
-    obs->data=NULL; obs->n =obs->nmax =0;
-    nav->eph =NULL; nav->n =nav->nmax =0;
-    nav->geph=NULL; nav->ng=nav->ngmax=0;
-    nav->seph=NULL; nav->ns=nav->nsmax=0;
-	nav->galfreq = prcopt->freqopt;
-	nav->galcode = 1;  /* ? 1:I/Nav, 2:FNav */
-	nav->obstsys = TSYS_GPS;
-	nav->ion_bdsk9 = new BDSSH();
-	nav->igmasta = -1;
+    // 初始化
+    init_nav(&navs);
+    init_obs(&obss);
+    nav->galfreq = prcopt->freqopt;
     nepoch=0;
     
     for (i=0;i<n;i++) {
@@ -824,7 +850,7 @@ static int readobsnav(gtime_t ts, gtime_t te, double ti, char **infile,
 	if (obs->n > 0)
     {
 		time2epoch(obs->data[0].time, ep);
-		nav->ion_bdsk9->uniqion(ep);
+        char iftrue = uniqion(ep, nav->ion_bdsk9);
 	}
 
     /* set time span for progress display */
@@ -978,7 +1004,8 @@ static int openses(const prcopt_t *popt, const solopt_t *sopt,
         return 0;
     }
     /* read receiver antenna parameters */
-    if (*fopt->rcvantp&&!(readpcv(fopt->rcvantp,pcvr))) {
+    if (*fopt->rcvantp&&!(readpcv(fopt->rcvantp,pcvr))) 
+    {
         showmsg("error : no rec ant pcv in %s",fopt->rcvantp);
         trace(1,"rec antenna pcv read error: %s\n",fopt->rcvantp);
         return 0;
@@ -987,7 +1014,8 @@ static int openses(const prcopt_t *popt, const solopt_t *sopt,
     // 大地水准面模型
     /* open geoid data */
     if (sopt->geoid>0&&*fopt->geoid) {
-        if (!opengeoid(sopt->geoid,fopt->geoid)) {
+        if (!opengeoid(sopt->geoid,fopt->geoid)) 
+        {
             showmsg("error : no geoid data %s",fopt->geoid);
             trace(2,"no geoid data %s\n",fopt->geoid);
         }
@@ -1079,7 +1107,7 @@ static void readotl(prcopt_t *popt, const char *file, const sta_t *sta)
     }
 }
 /* write header to output file -----------------------------------------------*/
-static int outhead(const char *outfile, char **infile, int n,
+static int outhead(const char *outfile, const char **infile, int n,
                    const prcopt_t *popt, const solopt_t *sopt)
 {
     FILE *fp=stdout;
@@ -1112,7 +1140,7 @@ static FILE *openfile(const char *outfile)
 //处理进程会话
 static int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
                    const solopt_t *sopt, const filopt_t *fopt, int flag,
-                   char **infile, const int *index, int n, char *outfile)
+    const char **infile, const int *index, int n, const char *outfile)
 {
 	FILE *fp, *fpres, *fpout, *fdop;
     prcopt_t popt_=*popt;
@@ -1322,9 +1350,9 @@ static int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
 		else sys=1;
 		/* datafile , figurename, maxcolor and mincolor*/
 		//sprintf(cmd_str, "map_dop %s %s %f %f", dopdatafile, figurefile, 3.0, 0.5);
-		sprintf(cmd_str,"%s %s %s %1d %02.0lf:%02.0lf %04.0lf-%02.0lf-%02.0lf",
-			"start /wait /min E:/pvt/zhghu_bin/gnssmap.exe",dopdatafile,figurefile,sys,ep[3],ep[4],ep[0],ep[1],ep[2]);
-		system(cmd_str);
+        sprintf(cmd_str, "%s %s %s %1d %02.0lf:%02.0lf %04.0lf-%02.0lf-%02.0lf",
+            "start /wait /min E:/pvt/zhghu_bin/gnssmap.exe", dopdatafile, figurefile, sys, ep[3], ep[4], ep[0], ep[1], ep[2]);
+        system(cmd_str);
 
 		fclose(fpres);
 		fclose(fdop);
@@ -1379,13 +1407,15 @@ static int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
 */
 static int execses_r(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
                      const solopt_t *sopt, const filopt_t *fopt, int flag,
-                     char **infile, const int *index, int n, char *outfile,
+                     const char **infile, const int *index, int n, const char *outfile,
                      const char *rov)
 {
     gtime_t t0={0};
     int i,stat=0;
-    char *ifile[MAXINFILE],ofile[1024],*rov_,*p,*q,s[64]="";
-    
+    char* ifile[MAXINFILE];
+    char* ofile = (char*)malloc(1024);
+    char* rov_, * p, * q, s[64] = "";
+    const char* local_ifile[MAXINFILE], * local_ofile;
     trace(3,"execses_r: n=%d outfile=%s\n",n,outfile);
     
     for (i=0;i<n;i++) if (strstr(infile[i],"%r")) break;
@@ -1414,7 +1444,9 @@ static int execses_r(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
                 reppath(outfile,ofile,t0,p,"");
                 
                 /* execute processing session */
-                stat=execses(ts,te,ti,popt,sopt,fopt,flag,ifile,index,n,ofile);
+                for (int i = 0; i < MAXINFILE; i++)local_ifile[i] = ifile[i];
+                local_ofile = ofile;
+                stat=execses(ts,te,ti,popt,sopt,fopt,flag, local_ifile,index,n, local_ofile);
             }
             if (stat==1||!q) break;
         }
@@ -1429,12 +1461,13 @@ static int execses_r(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
 /* execute processing session for each base station --------------------------*/
 static int execses_b(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
                      const solopt_t *sopt, const filopt_t *fopt, int flag,
-                     char **infile, const int *index, int n, char *outfile,
+    const char **infile, const int *index, int n, const char *outfile,
                      const char *rov, const char *base)
 {
     gtime_t t0={0};
     int i,stat=0;
     char *ifile[MAXINFILE],ofile[1024],*base_,*p,*q,s[64];
+    const char* local_ifile[MAXINFILE], * local_ofile;
     
     trace(3,"execses_b: n=%d outfile=%s\n",n,outfile);
     
@@ -1481,8 +1514,9 @@ static int execses_b(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
                 }
                 for (i=0;i<n;i++) reppath(infile[i],ifile[i],t0,"",p);  //替换文件路径表达
                 reppath(outfile,ofile,t0,"",p);
-                
-                stat=execses_r(ts,te,ti,popt,sopt,fopt,flag,ifile,index,n,ofile,rov);
+                for (int i = 0; i < MAXINFILE; i++)local_ifile[i] = ifile[i];
+                local_ofile = ofile;
+                stat = execses_r(ts, te, ti, popt, sopt, fopt, flag, local_ifile, index, n, local_ofile, rov);
             }
             if (stat==1||!q) break;
         }
@@ -1547,119 +1581,126 @@ static int execses_b(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
 *   **infile[x]代表该地址下的文件，在实例中就为O文件
 */
 extern int postpos(gtime_t ts, gtime_t te, double ti, double tu,
-                   const prcopt_t *popt, const solopt_t *sopt,
-                   const filopt_t *fopt, char **infile, int n, char *outfile,
-                   const char *rov, const char *base)
+    const prcopt_t* popt, const solopt_t* sopt,
+    const filopt_t* fopt, const char** infile, int n, const char* outfile,
+    const char* rov, const char* base)
 {
-    gtime_t tts,tte,ttte;
-    double tunit,tss;
-    int i,j,k,nf,stat=0,week,flag=1,index[MAXINFILE]={0};
-    char *ifile[MAXINFILE],ofile[1024],*ext;
-    
-    trace(3,"postpos : ti=%.0f tu=%.0f n=%d outfile=%s\n",ti,tu,n,outfile);
-    
+    gtime_t tts = { -1 }, tte = { -1 }, ttte = { -1 };
+    double tunit, tss;
+    int i, j, k, nf = -1, stat = 0, week, flag = 1, index[MAXINFILE] = { 0 };
+    char* ifile[MAXINFILE], ofile[1024] = "";
+    const char* local_ifile[MAXINFILE], * local_ofile;
+    const char* ext;
+
+    trace(3, "postpos : ti=%.0f tu=%.0f n=%d outfile=%s\n", ti, tu, n, outfile);
+
     /* open processing session */
     //读取天线等信息，如果没有天线信息就是返回0
-    if (!openses(popt,sopt,fopt,&navs,&pcvss,&pcvsr)) return -1;
-    
+    if (!openses(popt, sopt, fopt, &navs, &pcvss, &pcvsr)) return -1;
+
     //如果开始与结束时间存在，并且单位时间存在，进行以下
-    if (ts.time!=0&&te.time!=0&&tu>=0.0) 
+    if (ts.time != 0 && te.time != 0 && tu >= 0.0)
     {
-        if (timediff(te,ts)<0.0) 
+        if (timediff(te, ts) < 0.0)
         {
             showmsg("error : no period");
-            closeses(&navs,&pcvss,&pcvsr);  //关闭对话释放内存
+            closeses(&navs, &pcvss, &pcvsr);  //关闭对话释放内存
             return 0;
         }
-        for (i=0;i<MAXINFILE;i++) 
+        for (i = 0; i < MAXINFILE; i++)
         {
-            if (!(ifile[i]=(char *)malloc(1024))) {
-                for (;i>=0;i--) free(ifile[i]);
-                closeses(&navs,&pcvss,&pcvsr);
+            if (!(ifile[i] = (char*)malloc(1024))) {
+                for (; i >= 0; i--) free(ifile[i]);
+                closeses(&navs, &pcvss, &pcvsr);
                 return -1;
             }
         }
-        if (tu==0.0||tu>86400.0*MAXPRCDAYS) tu=86400.0*MAXPRCDAYS;  //如果处理单位时间为零或过大，进行初始化限制
-        settspan(ts,te);
-        tunit=tu<86400.0?tu:86400.0;    //如果 tu 小于 86400.0，则 tunit = tu，否则 tunit = 86400.0。
+        if (tu == 0.0 || tu > 86400.0 * MAXPRCDAYS) tu = 86400.0 * MAXPRCDAYS;  //如果处理单位时间为零或过大，进行初始化限制
+        settspan(ts, te);
+        tunit = tu < 86400.0 ? tu : 86400.0;    //如果 tu 小于 86400.0，则 tunit = tu，否则 tunit = 86400.0。
         tss = tunit * (int)floor(time2gpst(ts, &week) / tunit);     //tss = tunit * （ts_GPS周内秒/tunit，再向下取整）
-        
-        for (i=0;;i++) { /* for each periods */
-            tts=gpst2time(week,tss+i*tu);
-            tte=timeadd(tts,tu-DTTOL);  //
-            if (timediff(tts,te)>0.0) break;
-            if (timediff(tts,ts)<0.0) tts=ts;
-            if (timediff(tte,te)>0.0) tte=te;
-            
-            strcpy(proc_rov ,"");
-            strcpy(proc_base,"");
-            if (checkbrk("reading    : %s",time_str(tts,0))) {
-                stat=1;
+
+        for (i = 0;; i++) 
+        { /* for each periods */
+            tts = gpst2time(week, tss + i * tu);
+            tte = timeadd(tts, tu - DTTOL);  //
+            if (timediff(tts, te) > 0.0) break;
+            if (timediff(tts, ts) < 0.0) tts = ts;
+            if (timediff(tte, te) > 0.0) tte = te;
+
+            strcpy(proc_rov, "");
+            strcpy(proc_base, "");
+            if (checkbrk("reading    : %s", time_str(tts, 0))) {
+                stat = 1;
                 break;
             }
-            for (j=k=nf=0;j<n;j++) {
-                
-                ext=strrchr(infile[j],'.');
-                
-                if (ext&&(!strcmp(ext,".rtcm3")||!strcmp(ext,".RTCM3"))) {
-                    strcpy(ifile[nf++],infile[j]);
+            for (j = k = nf = 0; j < n; j++) {
+
+                ext = strrchr(infile[j], '.');
+
+                if (ext && (!strcmp(ext, ".rtcm3") || !strcmp(ext, ".RTCM3"))) {
+                    strcpy(ifile[nf++], infile[j]);
                 }
                 else {
                     /* include next day precise ephemeris or rinex brdc nav */
-                    ttte=tte;
-                    if (ext&&(!strcmp(ext,".sp3")||!strcmp(ext,".SP3")||
-                              !strcmp(ext,".eph")||!strcmp(ext,".EPH"))) {
-                        ttte=timeadd(ttte,3600.0);
+                    ttte = tte;
+                    if (ext && (!strcmp(ext, ".sp3") || !strcmp(ext, ".SP3") ||
+                        !strcmp(ext, ".eph") || !strcmp(ext, ".EPH"))) {
+                        ttte = timeadd(ttte, 3600.0);
                     }
-                    else if (strstr(infile[j],"brdc")) {
-                        ttte=timeadd(ttte,7200.0);
+                    else if (strstr(infile[j], "brdc")) {
+                        ttte = timeadd(ttte, 7200.0);
                     }
-                    nf+=reppaths(infile[j],ifile+nf,MAXINFILE-nf,tts,ttte,"","");
+                    nf += reppaths(infile[j], ifile + nf, MAXINFILE - nf, tts, ttte, "", "");
                 }
-                while (k<nf) index[k++]=j;
-                
-                if (nf>=MAXINFILE) {
-                    trace(2,"too many input files. trancated\n");
+                while (k < nf) index[k++] = j;
+
+                if (nf >= MAXINFILE) {
+                    trace(2, "too many input files. trancated\n");
                     break;
                 }
             }
-            if (!reppath(outfile,ofile,tts,"","")&&i>0) flag=0;
-            
+            if (!reppath(outfile, ofile, tts, "", "") && i > 0) flag = 0;
+
             /* execute processing session */
-            stat=execses_b(tts,tte,ti,popt,sopt,fopt,flag,ifile,index,nf,ofile,
-                           rov,base);
-            
-            if (stat==1) break;
+            for (int i = 0; i < MAXINFILE; i++)local_ifile[i] = ifile[i];
+            local_ofile = ofile;
+            stat = execses_b(tts, tte, ti, popt, sopt, fopt, flag, local_ifile, index, nf, local_ofile,
+                rov, base);
+
+            if (stat == 1) break;
         }
-        for (i=0;i<MAXINFILE;i++) free(ifile[i]);
+        for (i = 0; i < MAXINFILE; i++) free(ifile[i]);
     }
-    else if (ts.time!=0) {
-        for (i=0;i<n&&i<MAXINFILE;i++) {
-            if (!(ifile[i]=(char *)malloc(1024))) {
-                for (;i>=0;i--) free(ifile[i]);
+    else if (ts.time != 0) {
+        for (i = 0; i < n && i < MAXINFILE; i++) {
+            if (!(ifile[i] = (char*)malloc(1024))) {
+                for (; i >= 0; i--) free(ifile[i]);
                 return -1;
             }
-            reppath(infile[i],ifile[i],ts,"","");
-            index[i]=i;
+            reppath(infile[i], ifile[i], ts, "", "");
+            index[i] = i;
         }
-        reppath(outfile,ofile,ts,"","");
-        
+        reppath(outfile, ofile, ts, "", "");
+
         /* execute processing session */
-        stat=execses_b(ts,te,ti,popt,sopt,fopt,1,ifile,index,n,ofile,rov,
-                       base);
-        
-        for (i=0;i<n&&i<MAXINFILE;i++) free(ifile[i]);
+        for (int i = 0; i < MAXINFILE; i++)local_ifile[i] = ifile[i];
+        local_ofile = ofile;
+        stat = execses_b(tts, tte, ti, popt, sopt, fopt, flag, local_ifile, index, nf, local_ofile,
+            rov, base);
+
+        for (i = 0; i < n && i < MAXINFILE; i++) free(ifile[i]);
     }
     else {
-        for (i=0;i<n;i++) index[i]=i;
-        
+        for (i = 0; i < n; i++) index[i] = i;
+
         /* execute processing session */
         if (popt->mode == PMODE_SINGLE)
             stat = execses(ts, te, ti, popt, sopt, fopt, 1, infile, index, n, outfile);
-		else
+        else
             stat = execses_b(ts, te, ti, popt, sopt, fopt, 1, infile, index, n, outfile, rov, base);
     }
     /* close processing session */
-    closeses(&navs,&pcvss,&pcvsr);
+    closeses(&navs, &pcvss, &pcvsr);
     return stat;
 }

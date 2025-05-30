@@ -239,7 +239,7 @@ const char *formatstrs[32]={    /* stream format strings */
     "NMEA 0183",                /* 21 */
     NULL
 };
-static char *obscodes[]={       /* observation code strings */
+static const char *obscodes[]={       /* observation code strings */
     
     ""  ,"1C","1P","1W","1Y", "1M","1N","1S","1L","1E", /*  0- 9 */
     "1A","1B","1X","1Z","2C", "2D","2S","2L","2X","2P", /* 10-19 */
@@ -646,7 +646,7 @@ extern unsigned char obs2code(const char *obs, int *freq)
 * return : obs code string ("1C","1P","1P",...)
 * notes  : obs codes are based on reference [6] and qzss extension
 *-----------------------------------------------------------------------------*/
-extern char *code2obs(unsigned char code, int *freq)
+extern const char *code2obs(unsigned char code, int *freq)
 {
     if (freq) *freq=0;
     if (code<=CODE_NONE||MAXCODE<code) return "";
@@ -684,8 +684,8 @@ extern void setcodepri(int sys, int freq, const char *pri)
 *-----------------------------------------------------------------------------*/
 extern int getcodepri(int sys, unsigned char code, const char *opt)
 {
-    const char *p,*optstr;
-    char *obs,str[8]="";
+    const char* p, * optstr, * obs;
+    char str[8] = "";
     int i,j;
     
     switch (sys) {
@@ -2596,7 +2596,10 @@ static int isys(int sys, int code, int ifrq)
 	case SYS_SBS: k = 4; n = 1; break;
 	case SYS_CMP: 
 		k = 5;
-		n = code==0||code == 1 && ifrq == 3 || code == 2 && ifrq == 4|| code == 3 && ifrq == 5;
+        n = (code == 0) ||
+            (code == 1 && ifrq == 3) ||
+            (code == 2 && ifrq == 4) ||
+            (code == 3 && ifrq == 5);
 		break;
 	case SYS_IRN: k = 6; n = 1; break;
 	}
@@ -2615,6 +2618,12 @@ static void uniqeph(nav_t *nav)
     
     if (nav->n<=0) return;
     
+    /* 排序原则：
+    * 1. 按照ttr（接受星历时间）时间排序
+    * 2. 如果ttr时间相同，则按照toe时间排序
+    * 3. 如果toe时间相同，则按照code排序，以北斗为例：0:B1I/B2I/B3I,1:B1C,2:B2a,3:B2b
+    * 4. 如果code相同，则按照卫星编号排序
+    */
     qsort(nav->eph,nav->n,sizeof(eph_t),cmpeph);
     
 
@@ -2780,7 +2789,11 @@ extern int sortobs(obs_t *obs)
     trace(3,"sortobs: nobs=%d\n",obs->n);
     
     if (obs->n<=0) return 0;
-    
+    /* 排序原则：
+    * 1.时间不同，则按时间先后排序
+    * 2.接收机不同，则按接收机编号先后排序
+    * 3.卫星不同，则按卫星编号先后排序
+    */
     qsort(obs->data,obs->n,sizeof(obsd_t),cmpobs);
     
     /* delete duplicated data/相当于一个滤网，非重复的通过，过滤掉重复的值 */
@@ -3266,12 +3279,13 @@ extern int expath(const char *path, char *paths[], int nmax)
     struct dirent *d;
     DIR *dp;
     const char *file=path;
-    char dir[1024]="",s1[1024],s2[1024],*p,*q,*r;
+    char dir[1024]="",s1[1024],s2[1024],*q,*r;
+    char* p;
     
     trace(3,"expath  : path=%s nmax=%d\n",path,nmax);
     
-    if ((p=strrchr(path,'/'))||(p=strrchr(path,'\\'))) {
-        file=p+1; strncpy(dir,path,p-path+1); dir[p-path+1]='\0';
+    if ((p = (char*)strrchr(path, '/')) || (p = (char*)strrchr(path, '\\'))) {
+        file = p + 1; strncpy(dir, path, p - path + 1); dir[p - path + 1] = '\0';
     }
     if (!(dp=opendir(*dir?dir:"."))) return 0;
     while ((d=readdir(dp))) {
@@ -3999,7 +4013,8 @@ extern void csmooth(obs_t *obs, int ns)
 extern int rtk_uncompress(const char *file, char *uncfile)
 {
     int stat=0;
-    char *p,cmd[2048]="",tmpfile[1024]="",buff[1024],*fname,*dir="";
+    char* p, cmd[2048] = "", tmpfile[1024] = "", buff[1024], * fname;
+    const char* dir = "";
     
     trace(3,"rtk_uncompress: file=%s\n",file);
     
@@ -4065,7 +4080,8 @@ extern int rtk_uncompress(const char *file, char *uncfile)
     return stat;
 }
 
-extern int isepoch(gtime_t t, char *timestr){
+extern int isepoch(gtime_t t, const char *timestr)
+{
 	gtime_t time;
 	double ep[6];
 	sscanf(timestr, "%lf/%lf/%lf %lf:%lf:%lf", ep, ep + 1, ep + 2, ep + 3, ep + 4, ep + 5);

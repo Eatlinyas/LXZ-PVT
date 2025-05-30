@@ -1214,7 +1214,8 @@ extern int outnmea_rmc(unsigned char *buff, const sol_t *sol)
     static double dirp=0.0;
     gtime_t time;
     double ep[6],pos[3],enuv[3],dms1[3],dms2[3],vel,dir,amag=0.0;
-    char *p=(char *)buff,*q,sum,*emag="E";
+    char* p = (char*)buff, * q, sum;
+    const char* emag = "E";
     
     trace(3,"outnmea_rmc:\n");
     
@@ -1240,11 +1241,11 @@ extern int outnmea_rmc(unsigned char *buff, const sol_t *sol)
     }
     deg2dms(fabs(pos[0])*R2D,dms1,7);
     deg2dms(fabs(pos[1])*R2D,dms2,7);
-    p+=sprintf(p,"$GPRMC,%02.0f%02.0f%05.2f,A,%02.0f%010.7f,%s,%03.0f%010.7f,%s,%4.2f,%4.2f,%02.0f%02.0f%02d,%.1f,%s,%s",
-               ep[3],ep[4],ep[5],dms1[0],dms1[1]+dms1[2]/60.0,pos[0]>=0?"N":"S",
-               dms2[0],dms2[1]+dms2[2]/60.0,pos[1]>=0?"E":"W",vel/KNOT2M,dir,
-               ep[2],ep[1],(int)ep[0]%100,amag,emag,
-               sol->stat==SOLQ_DGPS||sol->stat==SOLQ_FLOAT||sol->stat==SOLQ_FIX?"D":"A");
+    p += sprintf(p, "$GPRMC,%02.0f%02.0f%05.2f,A,%02.0f%010.7f,%s,%03.0f%010.7f,%s,%4.2f,%4.2f,%02.0f%02.0f%02d,%.1f,%s,%s",
+        ep[3], ep[4], ep[5], dms1[0], dms1[1] + dms1[2] / 60.0, pos[0] >= 0 ? "N" : "S",
+        dms2[0], dms2[1] + dms2[2] / 60.0, pos[1] >= 0 ? "E" : "W", vel / KNOT2M, dir,
+        ep[2], ep[1], (int)ep[0] % 100, amag, emag,
+        sol->stat == SOLQ_DGPS || sol->stat == SOLQ_FLOAT || sol->stat == SOLQ_FIX ? "D" : "A");
     for (q=(char *)buff+1,sum=0;*q;q++) sum^=*q; /* check-sum */
     p+=sprintf(p,"*%02X%c%c",sum,0x0D,0x0A);
     return p-(char *)buff;

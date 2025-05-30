@@ -561,9 +561,9 @@ static void decode_navh(char *buff, nav_t *nav)
 				int nk8 = nav->ion_bdsk9->bds_ion.nk8;
 				for (i = 0, j = 5; i<4; i++, j += 12) ionvalue[i] = str2num(buff, j, 12);
 				nav->ion_bdsk9->bds_ion.bdsk8[nk8].hour = hour;
-				for (i = 0; i<4; i++) nav->ion_bdsk9->bds_ion.bdsk8[nk8].ion[i] = ionvalue[i];
+                for (i = 0; i < 4; i++) nav->ion_bdsk9->bds_ion.bdsk8[nk8].ion[i] = ionvalue[i];
 				for (i = 4; i < 8; i++) nav->ion_bdsk9->bds_ion.bdsk8[nk8].ion[i] = 0.0;
-				nav->ion_bdsk9->bds_ion.bdsk8[nk8].sat = sat;
+                nav->ion_bdsk9->bds_ion.bdsk8[nk8].sat = sat;
             }
             else if (!strncmp(buff,"BDSB",4)) { /* v.3.02 */
 				int hour = AZ2hour(buff[54]);
@@ -874,8 +874,8 @@ static int decode_obsdata(FILE *fp, char *buff, double ver, int mask,
             j=0;
         }
         if (stat) {
-            val[i]=str2num(buff,j,14)+ind->shift[i];
-            lli[i]=(unsigned char)str2num(buff,j+14,1)&3;   // 最后的"&3"等价于"%4"（仅对 0～255 范围有效）
+            val[i] = str2num(buff, j, 14) + ind->shift[i];
+            lli[i] = (unsigned char)str2num(buff, j + 14 + 1, 1) & 3;   // 最后的"&3"等价于"%4"（仅对 0～255 范围有效）
         }
     }
     if (!stat) return 0;
@@ -887,12 +887,13 @@ static int decode_obsdata(FILE *fp, char *buff, double ver, int mask,
     /* assign position in obs data */
     for (i=n=m=0;i<ind->n;i++) 
     {
-        
         p[i]=ver<=2.11?ind->frq[i]-1:ind->pos[i];
         
         if (ind->type[i]==0&&p[i]==0) k[n++]=i; /* C1? index */
         if (ind->type[i]==0&&p[i]==1) l[m++]=i; /* C2? index */
     }
+    // 现在基本上都是rinex3.00+，而以下的优先级调整代码只有<=2.11才会启用，可以不管这一段代码
+    // 而且C2I只有北斗二号在用，但北二卫星默认排除，不参与解算
     if (ver<=2.11) {
         
         /* if multiple codes (C1/P1,C2/P2), select higher priority */
@@ -932,9 +933,11 @@ static int decode_obsdata(FILE *fp, char *buff, double ver, int mask,
         }
     }
     /* save obs data */
-    for (i=0;i<ind->n;i++) {
+    for (i=0;i<ind->n;i++) 
+    {
         if (p[i]<0||val[i]==0.0) continue;
-        switch (ind->type[i]) {
+        switch (ind->type[i]) 
+        {
             case 0: obs->P[p[i]]=val[i]; obs->code[p[i]]=ind->code[i]; break;
             case 1: obs->L[p[i]]=val[i]; obs->LLI [p[i]]=lli[i];       break;
             case 2: obs->D[p[i]]=(float)val[i];                        break;
@@ -1016,7 +1019,8 @@ static void set_index(double ver, int sys, const char *opt,
                       char tobs[MAXOBSTYPE][4], sigind_t *ind)
 {
     const char *p;
-    char str[8],*optstr="";
+    char str[8];
+    const char* optstr = "";
     double shift;
     int i,j,k,n;
     for (i=n=0;*tobs[i];i++,n++) {
@@ -2660,7 +2664,8 @@ extern int outrnxobsh(FILE *fp, const rnxopt_t *opt, const nav_t *nav)
     const char *glo_codes[]={"C1C","C1P","C2C","C2P"};
     double ep[6],pos[3]={0},del[3]={0};
     int i,j,k,n,prn[MAXPRNGLO];
-    char date[32],*sys,*tsys="GPS";
+    char date[32];
+    const char* sys, * tsys = "GPS";
     
     trace(3,"outrnxobsh:\n");
     
@@ -2775,7 +2780,7 @@ static void outrnxobsf(FILE *fp, double obs, int lli)
 static int obsindex(double ver, int sys, const unsigned char *code,
                     const char *tobs, const char *mask)
 {
-    char *id;
+    const char *id;
     int i;
     
     for (i=0;i<NFREQ+NEXOBS;i++) {
@@ -2936,7 +2941,8 @@ static void outnavf(FILE *fp, double value)
 extern int outrnxnavh(FILE *fp, const rnxopt_t *opt, const nav_t *nav)
 {
     int i;
-    char date[64],*sys;
+    char date[64];
+    const char* sys;
     
     trace(3,"outrnxnavh:\n");
     
@@ -3071,7 +3077,8 @@ extern int outrnxnavb(FILE *fp, const rnxopt_t *opt, const eph_t *eph)
 {
     double ep[6],ttr;
     int week,sys,prn;
-    char code[32],*sep;
+    char code[32];
+    const char* sep;
     
     trace(3,"outrnxgnavb: sat=%2d\n",eph->sat);
     
@@ -3213,7 +3220,8 @@ extern int outrnxgnavb(FILE *fp, const rnxopt_t *opt, const geph_t *geph)
     gtime_t toe;
     double ep[6],tof;
     int prn;
-    char code[32],*sep;
+    char code[32];
+    const char* sep;
     
     trace(3,"outrnxgnavb: sat=%2d\n",geph->sat);
     
@@ -3304,7 +3312,8 @@ extern int outrnxhnavb(FILE *fp, const rnxopt_t *opt, const seph_t *seph)
 {
     double ep[6];
     int prn;
-    char code[32],*sep;
+    char code[32];
+    const char* sep;
     
     trace(3,"outrnxhnavb: sat=%2d\n",seph->sat);
     

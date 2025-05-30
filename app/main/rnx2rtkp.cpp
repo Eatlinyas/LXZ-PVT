@@ -74,7 +74,7 @@ static const char *help[]={
 };
 /* show message --------------------------------------------------------------*/
 //返回0，但是会输出内容
-extern int showmsg(char *format, ...)
+extern int showmsg(const char *format, ...)
 {
     va_list arg;
     va_start(arg,format); vfprintf(stderr,format,arg); va_end(arg);
@@ -93,7 +93,7 @@ static void printhelp(void)
 }
 
 /* rnx2rtkp main -------------------------------------------------------------*/
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
     prcopt_t prcopt=prcopt_default;
     solopt_t solopt=solopt_default;
@@ -101,8 +101,9 @@ int main(int argc, char **argv)
     gtime_t ts={0},te={0};
     double tint=0.0,es[]={2000,1,1,0,0,0},ee[]={2000,12,31,23,59,59},pos[3];
     int i,j,n,ret;
-	char ifs[MAXFILE][1024], cfgfile[1024], out2file[1024];
-    char *infile[MAXFILE],*outfile="",*p;
+	char ifs[MAXFILE][1024], cfgfile[1024];
+    char* infile[MAXFILE] = { NULL }, * p;
+    char outfile[1024];
     
 
     prcopt.mode = PMODE_SINGLE;
@@ -127,7 +128,7 @@ int main(int argc, char **argv)
     }
     // 预输入指令处理
     for (i=1,n=0;i<argc;i++) {
-        if      (!strcmp(argv[i],"-o")&&i+1<argc) outfile=argv[++i];
+        if      (!strcmp(argv[i],"-o")&&i+1<argc) strcpy(outfile, argv[++i]);
         else if (!strcmp(argv[i],"-ts")&&i+2<argc) {
             sscanf(argv[++i],"%lf/%lf/%lf",es,es+1,es+2);
             sscanf(argv[++i],"%lf:%lf:%lf",es+3,es+4,es+5);
@@ -189,8 +190,8 @@ int main(int argc, char **argv)
 	if (n <= 0)
 	{
 		for (i = 0; i<MAXFILE; i++)infile[i] = ifs[i];
-		outfile = out2file;
-		n=loadfiles(cfgfile, sysopts, infile, outfile);     //n为输入文件数目
+        n = loadfiles(cfgfile, sysopts, infile, outfile);     //n为输入文件数目
+        for (int i = n; i < MAXFILE; i++)infile[i] = { NULL }; //清空剩余的输入文件
 	}
 
     if (!prcopt.navsys) {
@@ -202,7 +203,16 @@ int main(int argc, char **argv)
     }
 	solopt.navsys = prcopt.navsys;
 
-    ret=postpos(ts,te,tint,0.0,&prcopt,&solopt,&filopt,infile,n,outfile,"","");
+    const char* real_outfile = outfile;
+    const char* real_infile[MAXFILE];
+    for(int i=0;i<MAXFILE;i++)
+	{
+        if (!infile[i]) 
+            real_infile[i] = ""; //如果输入文件为空，则设置为NULL
+		else real_infile[i] = infile[i]; //否则设置为实际的输入文件路径
+	}
+
+    ret=postpos(ts,te,tint,0.0,&prcopt,&solopt,&filopt, real_infile,n, real_outfile,"","");
     
 	//system("pause");
     //if (!ret) fprintf(stderr,"%40s\r","");

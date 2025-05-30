@@ -186,7 +186,7 @@ extern void F2_layer_fourier_coefficients_close(
   F2_layer_fourier_coeff_context_t* const pContext);
 #endif
 
-#ifdef FTR_UNIT_TEST
+//#ifdef FTR_UNIT_TEST
 /** Unit test for CF2 and Cm3
  * @param[in, out] pContext F2 Fourier coefficients context
  * @param[in] pTime time context
@@ -196,7 +196,7 @@ extern int32_t F2_layer_fourier_coefficients_interpolate(
   F2_layer_fourier_coeff_context_t* const pContext,
   const NeQuickG_time_t * const pTime,
   const double_t Azr);
-#endif // FTR_UNIT_TEST
+//#endif  FTR_UNIT_TEST
 
 /** Compute CF2, the array of interpolated coefficients for
  * foF2 and Cm3, the array of interpolated coefficients for

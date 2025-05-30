@@ -85,26 +85,25 @@ static double_t Az_calc(
 }
 
 #ifndef FTR_UNIT_TEST
-static
+//static
 #endif
-double_t
-solar_activity_get_effective_ionisation_level_in_sfu(
-  const AZ_coefficients_t* const pCoeff,
-  double_t modip) {
-  if (!are_valid(pCoeff)) {
-    /**
-     *   In those cases, a default value shall be used for correction in
-     *   the receiver:
-     *   ai0 = NEQUICK_G_AZ_DEFAULT_VALUE; ai1 = ai2 = 0
-     */
-    return NEQUICK_G_AZ_DEFAULT_VALUE_SFU;
-  }
+double_t solar_activity_get_effective_ionisation_level_in_sfu
+(const AZ_coefficients_t* const pCoeff, double_t modip)
+{
+    if (!are_valid(pCoeff)) {
+        /**
+         *   In those cases, a default value shall be used for correction in
+         *   the receiver:
+         *   ai0 = NEQUICK_G_AZ_DEFAULT_VALUE; ai1 = ai2 = 0
+         */
+        return NEQUICK_G_AZ_DEFAULT_VALUE_SFU;
+    }
 
-  {
-    double_t Az = Az_calc(pCoeff, modip);
-    check_boundaries(&Az);
-    return Az;
-  }
+    {
+        double_t Az = Az_calc(pCoeff, modip);
+        check_boundaries(&Az);
+        return Az;
+    }
 }
 
 bool solar_activity_is_effective_ionisation_level_equal(

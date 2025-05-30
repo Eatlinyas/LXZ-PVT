@@ -50,6 +50,14 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#ifndef MAX_PATH
+#define MAX_PATH 260
+#endif
+#endif
+
 
 /** This is NequickG JRC version 0.1*/
 #define NEQUICKG_VERSION (0.1)
